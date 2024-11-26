@@ -1,0 +1,9 @@
+# venv
+.estagiae
+
+# Files
+.env
+
+__pycache__/
+*.pyc
+*.pyo
