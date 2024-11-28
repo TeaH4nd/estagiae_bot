@@ -77,6 +77,17 @@ async def get_user_data(update: Update, context: CallbackContext) -> None:
         resposta = "Nenhum dado salvo para este usuário."
     await update.message.reply_text(resposta, parse_mode="Markdown")
 
+async def handle_welcome(update: Update, context: CallbackContext) -> None:
+    await update.message.reply_text(
+        "Olá! Eu sou o Estagiaê 🤖, o robozinho que irá te ajudar com o seu processo de"
+        "estágio. Eu sou capaz de extrair informações de boletins acadêmicos em "
+        "PDF e te ajudar a organizar esses dados. \n\n"
+        "Para começar:\n"
+        "1️⃣ Envie um arquivo PDF com o boletim acadêmico.\n"
+        "2️⃣ Eu irei processar o documento e extrair as informações principais.\n"
+        "3️⃣ Use /dados para ver os dados extraídos.\n"
+    )
+
 def main():
     """Configura o bot e inicia o polling."""
     app = Application.builder().token(TOKEN).build()
@@ -85,6 +96,9 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("dados", get_user_data))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
+
+    # Mensagem de boas-vindas
+    app.add_handler(MessageHandler(filters.ALL, handle_welcome))
 
     # Inicia o bot
     print("Bot está rodando...")
