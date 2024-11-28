@@ -25,6 +25,7 @@ TOKEN = os.getenv("TELEGRAM_TOKEN")
 # Sessões dos usuários
 user_sessions = {}
 
+
 async def start(update: Update, context: CallbackContext) -> None:
     """Inicia a interação com o bot."""
     user_id = str(update.effective_user.id)
@@ -50,6 +51,7 @@ async def start(update: Update, context: CallbackContext) -> None:
             "2️⃣ Eu irei processar o documento e extrair as informações principais.\n"
             "3️⃣ Use /dados para ver os dados extraídos.\n"
         )
+
 
 async def handle_pdf(update: Update, context: CallbackContext) -> None:
     """Processa o arquivo PDF enviado pelo usuário."""
@@ -81,7 +83,8 @@ async def handle_pdf(update: Update, context: CallbackContext) -> None:
             f"**Nome Civil:** {dados['nome_civil']}\n"
             f"**DRE:** {dados['dre']}\n"
             f"**CR Acumulado:** {dados['cr_acumulado']}\n"
-            f"**Códigos de Disciplinas:** {', '.join(dados['codigos_disciplinas'])}\n"
+            f"**Códigos de Disciplinas:** {
+                ', '.join(dados['codigos_disciplinas'])}\n"
         )
         await update.message.reply_text(resposta, parse_mode="Markdown")
     except Exception as e:
@@ -99,11 +102,13 @@ async def get_user_data(update: Update, context: CallbackContext) -> None:
             f"**Nome Civil:** {dados['nome_civil']}\n"
             f"**DRE:** {dados['dre']}\n"
             f"**CR Acumulado:** {dados['cr_acumulado']}\n"
-            f"**Códigos de Disciplinas:** {', '.join(dados['codigos_disciplinas'])}\n"
+            f"**Códigos de Disciplinas:** {
+                ', '.join(dados['codigos_disciplinas'])}\n"
         )
     else:
         resposta = "Nenhum dado salvo para este usuário. Envie um boletim em PDF para começar."
     await update.message.reply_text(resposta, parse_mode="Markdown")
+
 
 def main():
     """Configura o bot e inicia o polling."""
@@ -122,6 +127,7 @@ def main():
     # Inicia o bot
     print("Bot está rodando...")
     app.run_polling()
+
 
 if __name__ == "__main__":
     main()
