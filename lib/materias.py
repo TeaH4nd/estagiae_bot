@@ -36,6 +36,7 @@ MATERIAS_4_PERIODO = [
     'MAD243',
 ]
 
+
 async def validate_materias(update: Update, context: CallbackContext, dados) -> None:
     """Valida as matérias do 4º período."""
     materias = dados.get("codigos_disciplinas", [])
@@ -52,7 +53,7 @@ async def validate_materias(update: Update, context: CallbackContext, dados) -> 
         await update.message.reply_text(
             "Você já cursou todas as matérias do 4º período." +
             "Vou enviar um email para a comissao de estagio com os seus dados!"
-            )
+        )
         return
 
     if len(materias_faltantes) <= 4:

@@ -50,6 +50,7 @@ def extrair_dados_boletim(pdf_path):
     dados["codigos_disciplinas"] = list(set(dados["codigos_disciplinas"]))
     return dados
 
+
 async def handle_pdf(update: Update, context: CallbackContext) -> None:
     """Processa o arquivo PDF enviado pelo usuário."""
     user_id = str(update.effective_user.id)

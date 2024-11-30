@@ -9,7 +9,8 @@ SMTP_SERVER = "smtp.gmail.com"  # Servidor SMTP (exemplo: Gmail)
 SMTP_PORT = 587  # Porta SMTP para TLS
 EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")  # Endereço de e-mail remetente
 EMAIL_SENHA = os.getenv("EMAIL_SENHA")  # Senha do e-mail
-EMAIL_DESTINATARIO = "comissao.estagio@universidade.com"  # E-mail da comissão de estágio
+# E-mail da comissão de estágio
+EMAIL_DESTINATARIO = "comissao.estagio@universidade.com"
 
 
 async def enviar_email(update: Update, dados) -> None:
@@ -40,7 +41,8 @@ async def enviar_email(update: Update, dados) -> None:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
             server.login(EMAIL_REMETENTE, EMAIL_SENHA)
-            server.sendmail(EMAIL_REMETENTE, EMAIL_DESTINATARIO, message.as_string())
+            server.sendmail(EMAIL_REMETENTE, EMAIL_DESTINATARIO,
+                            message.as_string())
 
         await update.message.reply_text("E-mail enviado com sucesso para a comissão de estágio.")
     except Exception as e:
