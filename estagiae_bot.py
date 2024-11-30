@@ -1,22 +1,28 @@
 import os
-from dotenv import load_dotenv
+import smtplib
+
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 from telegram import Update
-from telegram.constants import ChatAction
 from telegram.ext import (
     Application,
     CommandHandler,
     MessageHandler,
     filters,
     CallbackContext,
+    CallbackQueryHandler
 )
 
-from lib.pdfReader import extrair_dados_boletim
+from lib.email import enviar_email
+from lib.pdfReader import handle_pdf
 from lib.login import (
     BASE_DIR,
     load_user_data,
     get_user_dir,
-    save_user_data,
 )
+
+from dotenv import load_dotenv
 
 # Carregar o token do arquivo .env
 load_dotenv()
@@ -53,44 +59,6 @@ async def start(update: Update, context: CallbackContext) -> None:
         )
 
 
-async def handle_pdf(update: Update, context: CallbackContext) -> None:
-    """Processa o arquivo PDF enviado pelo usuário."""
-    user_id = str(update.effective_user.id)
-    user_dir = get_user_dir(user_id)
-
-    # Verificar se o arquivo é um PDF
-    if update.message.document.mime_type != "application/pdf":
-        await update.message.reply_text("Por favor, envie um arquivo PDF.")
-        return
-
-    # Baixar o arquivo
-    document = update.message.document
-    file = await context.bot.get_file(document.file_id)
-    pdf_path = os.path.join(user_dir, "boletim.pdf")
-    await file.download_to_drive(pdf_path)
-
-    # Informar o usuário que o arquivo está sendo processado
-    await update.message.reply_chat_action(ChatAction.TYPING)
-
-    # Extrair dados do boletim
-    try:
-        dados = extrair_dados_boletim(pdf_path)
-        save_user_data(user_id, dados)
-
-        # Responder com os dados extraídos
-        resposta = (
-            f"**Dados Extraídos:**\n"
-            f"**Nome Civil:** {dados['nome_civil']}\n"
-            f"**DRE:** {dados['dre']}\n"
-            f"**CR Acumulado:** {dados['cr_acumulado']}\n"
-            f"**Códigos de Disciplinas:** {
-                ', '.join(dados['codigos_disciplinas'])}\n"
-        )
-        await update.message.reply_text(resposta, parse_mode="Markdown")
-    except Exception as e:
-        await update.message.reply_text(f"Erro ao processar o PDF: {e}")
-
-
 async def get_user_data(update: Update, context: CallbackContext) -> None:
     """Exibe os dados salvos na sessão do usuário."""
     user_id = str(update.effective_user.id)
@@ -110,6 +78,21 @@ async def get_user_data(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(resposta, parse_mode="Markdown")
 
 
+# Handler para as respostas do usuário
+async def handle_resposta(update: Update, context: CallbackContext) -> None:
+    """Manipula as respostas do usuário à validação de matérias."""
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "continuar":
+        user_id = str(update.effective_user.id)
+        dados = load_user_data(user_id)
+        await enviar_email(query, dados)
+        await query.edit_message_text("Você optou por continuar mesmo com as matérias faltantes.")
+        # Adicione aqui o que deve ser feito em seguida
+    elif query.data == "cancelar":
+        await query.edit_message_text("Você optou por não continuar.")
+
 def main():
     """Configura o bot e inicia o polling."""
     # Função para garantir que o diretório base exista
@@ -120,6 +103,7 @@ def main():
     # Comandos
     app.add_handler(CommandHandler("dados", get_user_data))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
+    app.add_handler(CallbackQueryHandler(handle_resposta))
 
     # Mensagem de boas-vindas
     app.add_handler(MessageHandler(filters.ALL, start))
