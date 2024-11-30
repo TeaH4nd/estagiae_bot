@@ -1,24 +1,32 @@
-# Estagiaê
+# **Estagiaê**
 
-Este é um bot básico desenvolvido para a disciplina de Gestão Estratégica de TI 
-24.2 com o intuito de facilitar a solicitação de estágios pelos alunos do DCC.
+O **Estagiaê** é um bot desenvolvido para a disciplina de Gestão Estratégica de TI (24.2), com o objetivo de facilitar a solicitação de estágios pelos alunos do Departamento de Ciência da Computação (DCC). Ele ajuda a validar os requisitos necessários e enviar solicitações de estágio diretamente para a comissão responsável.
 
-## Funcionalidades [WIP]
-- Responde ao comando `/start` com uma mensagem de boas-vindas.
-- Ecoa qualquer mensagem de texto enviada pelo usuário.
+---
 
-## Configuração do Ambiente
-### Pré-requisitos
+## **Funcionalidades**
+- Responde ao comando `/start` com uma mensagem personalizada, verificando se o aluno já possui dados salvos.
+- Valida se o aluno cursou todas as disciplinas do 4º período.
+- Permite ao aluno continuar o processo de solicitação mesmo com até 4 disciplinas pendentes.
+- Envia um e-mail para a comissão de estágio contendo os dados do aluno e o pedido de estágio.
+- Armazena os dados dos alunos em pastas separadas no disco, garantindo persistência entre reinicializações.
+
+---
+
+## **Configuração do Ambiente**
+
+### **Pré-requisitos**
 - Python 3.9 ou superior
 - Biblioteca `python-telegram-bot`
 - Biblioteca `python-dotenv`
+- Biblioteca `pdfplumber`
 
-### Instalação
+### **Instalação**
 1. Clone este repositório:
    ```bash
    git clone https://github.com/TeaH4nd/estagiae_bot.git
    cd estagiae_bot
-   ```
+
 2. Crie um ambiente virtual (opcional, mas recomendado):
    ```bash
    python -m venv venv 
