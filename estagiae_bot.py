@@ -93,6 +93,7 @@ async def handle_resposta(update: Update, context: CallbackContext) -> None:
     elif query.data == "cancelar":
         await query.edit_message_text("Você optou por não continuar.")
 
+
 def main():
     """Configura o bot e inicia o polling."""
     # Função para garantir que o diretório base exista
