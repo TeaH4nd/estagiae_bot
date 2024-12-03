@@ -5,6 +5,7 @@ from telegram import Update
 from telegram.ext import CallbackContext
 from telegram.constants import ChatAction
 
+from lib.consts.materias4Periodo import MATERIAS_4_PERIODO
 from lib.materias import validate_materias
 from lib.login import get_user_dir, save_user_data
 
@@ -16,7 +17,9 @@ def extrair_dados_boletim(pdf_path):
         "nome_civil": None,
         "dre": None,
         "codigos_disciplinas": [],
+        "disciplinas_faltantes": [],
         "cr_acumulado": None,
+        "telegram_id": None,
     }
 
     with pdfplumber.open(pdf_path) as pdf:
@@ -48,6 +51,7 @@ def extrair_dados_boletim(pdf_path):
                     dados["cr_acumulado"] = match_cr.group(1).strip()
 
     dados["codigos_disciplinas"] = list(set(dados["codigos_disciplinas"]))
+    dados["disciplinas_faltantes"] = list(set(MATERIAS_4_PERIODO) - set(dados["codigos_disciplinas"]))
     return dados
 
 
@@ -73,6 +77,7 @@ async def handle_pdf(update: Update, context: CallbackContext) -> None:
     # Extrair dados do boletim
     try:
         dados = extrair_dados_boletim(pdf_path)
+        dados["telegram_id"] = user_id
         save_user_data(user_id, dados)
 
         # Responder com os dados extraídos

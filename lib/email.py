@@ -1,10 +1,11 @@
-from email.mime.text import MIMEText
 import os
 import smtplib
+
+from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import CallbackContext
+from dotenv import load_dotenv
 
 from lib.login import load_user_data
 
@@ -28,8 +29,10 @@ async def enviar_email(update: Update, context: CallbackContext, dados) -> None:
         nome = dados.get("nome_civil", "Desconhecido")
         dre = dados.get("dre", "Desconhecido")
         cr_acumulado = dados.get("cr_acumulado", "N/A")
-        disciplinas = ", ".join(dados.get("codigos_disciplinas", []))
         pedido = dados.get("tipo_pedido", "Desconhecido")
+        email_aluno = dados.get("email", "Desconhecido")
+        disciplinas = dados.get("disciplinas_faltantes", [])
+        disciplinas = ", ".join(disciplinas) if disciplinas else "N/A"
         
         # Frases específicas para cada tipo de pedido
         frases_pedido = {
@@ -43,13 +46,13 @@ async def enviar_email(update: Update, context: CallbackContext, dados) -> None:
         # Obter a frase específica
         frase_pedido = frases_pedido.get(pedido, "Tipo de pedido não reconhecido.")
 
-
         subject = "Pedido de Estágio"
         body = (
             f"Nome do Aluno: {nome}\n"
             f"DRE: {dre}\n"
+            f"Email: {email_aluno}\n"
             f"CR Acumulado: {cr_acumulado}\n"
-            f"Disciplinas Cursadas: {disciplinas}\n\n"
+            f"Disciplinas do 4 periodo que falta cursar: {disciplinas}\n\n"
             f"{frase_pedido}\n\n"
         )
 
@@ -62,7 +65,6 @@ async def enviar_email(update: Update, context: CallbackContext, dados) -> None:
         # Envio do e-mail
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
-            print(EMAIL_SENHA)
             server.login(EMAIL_REMETENTE, EMAIL_SENHA)
             server.sendmail(EMAIL_REMETENTE, EMAIL_DESTINATARIO,
                             message.as_string())

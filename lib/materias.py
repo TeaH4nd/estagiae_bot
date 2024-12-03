@@ -1,43 +1,13 @@
+from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
+from lib.consts.materias4Periodo import MATERIAS_4_PERIODO
 from lib.email import enviar_email
 from lib.login import load_user_data, save_user_data
 
 
 BYPASS_VALIDATION = True
-
-MATERIAS_4_PERIODO = [
-    # 1 periodo
-    'ICP131',
-    'ICP132',
-    'ICP133',
-    'ICP134',
-    'ICP135',
-    'ICP136',
-    'ICPX06',
-    'ICPZ55',
-    # 2 periodo
-    'ICP141',
-    'ICP142',
-    'ICP143',
-    'ICP144',
-    'ICP145',
-    'MAE111',
-    # 3 periodo
-    'ICP115',
-    'ICP116',
-    'ICP237',
-    'ICP238',
-    'ICP239',
-    'MAE992',
-    # 4 periodo
-    'ICP246',
-    'ICP248',
-    'ICP249',
-    'ICP489',
-    'MAD243',
-]
 
 
 async def validate_materias(update: Update, context: CallbackContext, dados) -> None:
@@ -92,6 +62,19 @@ async def validate_materias(update: Update, context: CallbackContext, dados) -> 
         "Não é possível continuar enquanto você não cursar mais matérias."
     )
 
+# Handler para as respostas do usuário
+async def handle_resposta(update: Update, context: CallbackContext) -> None:
+    """Manipula as respostas do usuário à validação de matérias."""
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "continuar":
+        user_id = str(update.effective_user.id)
+        dados = load_user_data(user_id)
+        await query.edit_message_text("Você optou por continuar mesmo com as matérias faltantes.")
+        await solicitar_tipo_pedido(update, dados)
+    elif query.data == "cancelar":
+        await query.edit_message_text("Você optou por não continuar.")
 
 async def solicitar_tipo_pedido(update: Update, context: CallbackContext) -> None:
     """Solicita ao usuário o tipo de pedido de estágio."""
@@ -135,9 +118,22 @@ async def handle_tipo_pedido(update: Update, context: CallbackContext) -> None:
         dados['tipo_pedido'] = "pedido_finalizacao"
     else:
         dados['tipo_pedido'] = "Desconhecido"
+    dados["status"] = "Pendente"
+    dados["data_pedido"] = datetime.now().strftime("%d/%m/%Y")
     save_user_data(user_id, dados)
 
     chat_id = update.effective_chat.id
-    await context.bot.send_message(chat_id=chat_id, text="Ok! Vou enviar um email para a comissão de estágio com os seus dados.")
-    await enviar_email(update, context, dados)
+    await context.bot.send_message(chat_id=chat_id, text="Ok! Só preciso de um email de contato para finalizar o processo.")
+    await context.bot.send_message(chat_id=chat_id, text="Por favor, me envie seu email.")
     
+
+async def handle_email(update: Update, context: CallbackContext) -> None:
+    """Lida com o email de contato do usuário."""
+    email = update.message.text
+    user_id = str(update.effective_user.id)
+    dados = load_user_data(user_id)
+    dados['email'] = email
+    save_user_data(user_id, dados)
+    await update.message.reply_text("Obrigado! Seu email foi salvo.")
+
+    await enviar_email(update, context, dados)
