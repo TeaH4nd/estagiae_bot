@@ -11,6 +11,7 @@ from telegram.ext import (
 )
 
 from lib.email import enviar_email
+from lib.materias import handle_tipo_pedido
 from lib.pdfReader import handle_pdf
 from lib.login import (
     BASE_DIR,
@@ -38,20 +39,18 @@ async def start(update: Update, context: CallbackContext) -> None:
         dados = load_user_data(user_id)
         nome = dados.get("nome_civil", "Usuário").split()[0]
         await update.message.reply_text(
-            f"Olá, {nome}! O que você gostaria de fazer?\n"
-            f"1️⃣ /dados - Ver os dados salvos\n"
-            f"2️⃣ Enviar um novo boletim em PDF"
+            f"Olá, {nome}! O que você gostaria de fazer?\n\n"
+            f"- Digite /dados - Ver os dados salvos\n"
+            f"- Envie um novo boletim em PDF"
         )
     else:
         os.makedirs(user_dir)
         await update.message.reply_text(
             "Olá! Eu sou o Estagiaê 🤖, o robozinho que irá te ajudar com o seu processo de"
-            "estágio. Eu sou capaz de extrair informações de boletins acadêmicos em "
+            " estágio. Eu sou capaz de extrair informações de boletins acadêmicos em "
             "PDF e te ajudar a organizar esses dados. \n\n"
-            "Para começar:\n"
-            "1️⃣ Envie um arquivo PDF com o boletim acadêmico.\n"
-            "2️⃣ Eu irei processar o documento e extrair as informações principais.\n"
-            "3️⃣ Use /dados para ver os dados extraídos.\n"
+            "Para começar, envie um arquivo PDF com o boletim acadêmico, e eu irei processar o documento e extrair as informações principais.\n\n"
+            "Use /dados para ver os dados extraídos.\n"
         )
 
 
@@ -83,7 +82,7 @@ async def handle_resposta(update: Update, context: CallbackContext) -> None:
     if query.data == "continuar":
         user_id = str(update.effective_user.id)
         dados = load_user_data(user_id)
-        await enviar_email(query, dados)
+        await enviar_email(query, context, dados)
         await query.edit_message_text("Você optou por continuar mesmo com as matérias faltantes.")
         # Adicione aqui o que deve ser feito em seguida
     elif query.data == "cancelar":
@@ -100,7 +99,13 @@ def main():
     # Comandos
     app.add_handler(CommandHandler("dados", get_user_data))
     app.add_handler(MessageHandler(filters.Document.PDF, handle_pdf))
-    app.add_handler(CallbackQueryHandler(handle_resposta))
+
+    # CallbackQueryHandler para os tipos de pedidos
+    app.add_handler(CallbackQueryHandler(handle_tipo_pedido, pattern=r"^pedido_"))
+    
+    # CallbackQueryHandler para confirmações
+    app.add_handler(CallbackQueryHandler(handle_resposta, pattern=r"^confirmar_|^cancelar_"))
+
 
     # Mensagem de boas-vindas
     app.add_handler(MessageHandler(filters.ALL, start))

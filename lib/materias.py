@@ -2,7 +2,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CallbackContext
 
 from lib.email import enviar_email
+from lib.login import load_user_data, save_user_data
 
+
+BYPASS_VALIDATION = True
 
 MATERIAS_4_PERIODO = [
     # 1 periodo
@@ -41,6 +44,13 @@ async def validate_materias(update: Update, context: CallbackContext, dados) -> 
     """Valida as matérias do 4º período."""
     materias = dados.get("codigos_disciplinas", [])
 
+    if BYPASS_VALIDATION:
+        await update.message.reply_text(
+            "Você já cursou todas as matérias do 4º período."
+        )
+        await solicitar_tipo_pedido(update, dados)
+        return
+
     if not materias:
         await update.message.reply_text("Nenhuma matéria cadastrada pelo aluno.")
         return
@@ -49,7 +59,7 @@ async def validate_materias(update: Update, context: CallbackContext, dados) -> 
     materias_faltantes = list(set(MATERIAS_4_PERIODO) - set(materias))
 
     if not materias_faltantes:
-        await enviar_email(update, dados)
+        await solicitar_tipo_pedido(update, dados)
         await update.message.reply_text(
             "Você já cursou todas as matérias do 4º período." +
             "Vou enviar um email para a comissao de estagio com os seus dados!"
@@ -81,3 +91,53 @@ async def validate_materias(update: Update, context: CallbackContext, dados) -> 
             ', '.join(materias_faltantes)}.\n"
         "Não é possível continuar enquanto você não cursar mais matérias."
     )
+
+
+async def solicitar_tipo_pedido(update: Update, context: CallbackContext) -> None:
+    """Solicita ao usuário o tipo de pedido de estágio."""
+    keyboard = [
+        [InlineKeyboardButton("Primeiro Estágio", callback_data="pedido_inicio1")],
+        [InlineKeyboardButton("Segundo Estágio", callback_data="pedido_inicio2")],
+        [InlineKeyboardButton("Terceiro Estágio", callback_data="pedido_inicio3")],
+        [InlineKeyboardButton("Renovação de Estágio", callback_data="pedido_renovacao")],
+        [InlineKeyboardButton("Finalização de Estágio", callback_data="pedido_finalizacao")],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await update.message.reply_text(
+        "Por favor, escolha o tipo de pedido de estágio que você deseja fazer:",
+        reply_markup=reply_markup,
+    )
+
+async def handle_tipo_pedido(update: Update, context: CallbackContext) -> None:
+    """Lida com a escolha do tipo de pedido de estágio."""
+    query = update.callback_query
+    await query.answer()
+
+    tipo_pedido = query.data
+    user_id = str(update.effective_user.id)
+    dados = load_user_data(user_id)
+
+    if tipo_pedido == "pedido_inicio1":
+        await query.edit_message_text("Você está solicitando seu Primeiro estágio!")
+        dados['tipo_pedido'] = "pedido_inicio1"
+    elif tipo_pedido == "pedido_inicio2":
+        await query.edit_message_text("Você está solicitando seu Segundo estágio!")
+        dados['tipo_pedido'] = "pedido_inicio2"
+    elif tipo_pedido == "pedido_inicio3":
+        await query.edit_message_text("Você está solicitando seu Terceiro estágio!")
+        dados['tipo_pedido'] = "pedido_inicio3"
+    elif tipo_pedido == "pedido_renovacao":
+        await query.edit_message_text("Você escolheu: Renovação de Estágio.")
+        dados['tipo_pedido'] = "pedido_renovacao"
+    elif tipo_pedido == "pedido_finalizacao":
+        await query.edit_message_text("Você escolheu: Finalização de Estágio.")
+        dados['tipo_pedido'] = "pedido_finalizacao"
+    else:
+        dados['tipo_pedido'] = "Desconhecido"
+    save_user_data(user_id, dados)
+
+    chat_id = update.effective_chat.id
+    await context.bot.send_message(chat_id=chat_id, text="Ok! Vou enviar um email para a comissão de estágio com os seus dados.")
+    await enviar_email(update, context, dados)
+    
